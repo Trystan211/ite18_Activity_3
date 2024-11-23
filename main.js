@@ -1,147 +1,116 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/loaders/GLTFLoader.js';
-import { AmmoPhysics } from 'https://cdn.jsdelivr.net/npm/three/examples/jsm/physics/AmmoPhysics.js';
+import * as THREE from "three";
+import { AmmoPhysics } from "three/addons/physics/AmmoPhysics.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-// Scene, Camera, Renderer
+// Scene Setup
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 15, 30);
+scene.background = new THREE.Color(0x000000); // Black background
 
+// Camera Setup
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100
+);
+camera.position.set(10, 10, 15);
+
+// Renderer Setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
-// Physics setup
-const physics = await AmmoPhysics();
-physics.addScene(scene);
-
-// Dynamic Skybox (day to night transition)
-const updateSky = () => {
-  const hour = new Date().getHours();
-  const colors = hour >= 18 || hour <= 6 ? 0x001133 : 0x87ceeb; // Night or day
-  scene.background = new THREE.Color(colors);
-};
-updateSky();
-setInterval(updateSky, 1000);
-
-// Ground
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-const ground = new THREE.Mesh(new THREE.BoxGeometry(50, 1, 50), groundMaterial);
-ground.receiveShadow = true;
-scene.add(physics.addMesh(ground));
-
-// Particle System (Interactive Fireflies)
-const particleGeometry = new THREE.BufferGeometry();
-const particleCount = 800;
-const particlePositions = new Float32Array(particleCount * 3);
-const particleColors = new Float32Array(particleCount * 3);
-for (let i = 0; i < particleCount; i++) {
-  particlePositions[i * 3] = (Math.random() - 0.5) * 50;
-  particlePositions[i * 3 + 1] = Math.random() * 10 + 5;
-  particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 50;
-  particleColors[i * 3] = Math.random();
-  particleColors[i * 3 + 1] = Math.random();
-  particleColors[i * 3 + 2] = Math.random();
-}
-particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-const particleMaterial = new THREE.PointsMaterial({ size: 0.3, vertexColors: true });
-const particles = new THREE.Points(particleGeometry, particleMaterial);
-scene.add(particles);
-
 // Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); // Dim ambient light
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(20, 30, 20);
-scene.add(directionalLight);
+const moonLight = new THREE.DirectionalLight(0x88aaff, 0.2); // Moonlight effect
+moonLight.position.set(10, 20, -10);
+moonLight.castShadow = true;
+scene.add(moonLight);
 
-// Imported Models (Multiple)
-const loader = new GLTFLoader();
-loader.load('path/to/model1.glb', (gltf) => {
-  const model1 = gltf.scene;
-  model1.scale.set(2, 2, 2);
-  model1.position.set(-10, 1, 0);
-  scene.add(physics.addMesh(model1));
-});
-loader.load('path/to/model2.glb', (gltf) => {
-  const model2 = gltf.scene;
-  model2.scale.set(3, 3, 3);
-  model2.position.set(10, 1, -10);
-  scene.add(physics.addMesh(model2));
+// Physics
+let physicsWorld;
+Ammo().then((AmmoLib) => {
+  AmmoLib = Ammo;
+  physicsWorld = new AmmoPhysics(scene, AmmoLib);
 });
 
-// Interactive Physics Objects
-const objects = [];
-for (let i = 0; i < 10; i++) {
-  const box = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff })
-  );
-  box.position.set(
-    Math.random() * 20 - 10,
-    Math.random() * 10 + 5,
-    Math.random() * 20 - 10
-  );
-  box.castShadow = true;
-  scene.add(physics.addMesh(box));
-  objects.push(box);
+// Floor
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshStandardMaterial({ color: 0x003300 }) // Dark green
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Particle System
+const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+const particleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const particles = [];
+for (let i = 0; i < 100; i++) {
+  const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+  particle.position.set(Math.random() * 50 - 25, Math.random() * 50, Math.random() * 50 - 25);
+  scene.add(particle);
+  particles.push(particle);
 }
 
-// Raycaster for Interactions
+// Scroll-based Animation
+let scrollSpeed = 0;
+window.addEventListener("scroll", () => {
+  scrollSpeed = window.scrollY * 0.01;
+  camera.position.z = 15 + scrollSpeed; // Adjust camera position based on scroll
+});
+
+// Raycasting and Mouse Events
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-window.addEventListener('click', (event) => {
+const onMouseMove = (event) => {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(objects);
-  if (intersects.length > 0) {
-    const selectedObject = intersects[0].object;
-    selectedObject.material.color.set(0xff0000); // Change color
-    physics.applyImpulse(selectedObject, { x: 0, y: 10, z: 0 }); // Add physics impulse
-  }
-});
-
-// Scroll-based Animation
-let scrollPercent = 0;
-window.addEventListener('scroll', () => {
-  scrollPercent = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-});
-const scrollAnimateObjects = () => {
-  objects.forEach((obj, index) => {
-    obj.position.y += Math.sin(scrollPercent * Math.PI * 2 + index) * 0.1;
-  });
 };
+window.addEventListener("mousemove", onMouseMove);
 
-// Animation Loop
+// Update Physics and Objects
 const clock = new THREE.Clock();
 const animate = () => {
-  const delta = clock.getDelta();
-  physics.update(delta);
-
-  // Update particles
-  const positions = particles.geometry.attributes.position.array;
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3 + 1] -= delta * 0.5; // Gravity effect
-    if (positions[i * 3 + 1] < 0) positions[i * 3 + 1] = Math.random() * 10 + 5;
+  const deltaTime = clock.getDelta();
+  
+  // Physics World Update
+  if (physicsWorld) {
+    physicsWorld.update(deltaTime);
   }
-  particles.geometry.attributes.position.needsUpdate = true;
+  
+  // Update Particles
+  particles.forEach((particle) => {
+    particle.position.y -= 0.1; // Gravity effect
+    if (particle.position.y < -25) particle.position.y = 25; // Reset particles
+  });
 
-  scrollAnimateObjects();
+  // Raycasting to detect mouse interaction
+  raycaster.update(camera, mouse);
+  
+  // Render the scene
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 };
 
 animate();
 
-// Handle resizing
-window.addEventListener('resize', () => {
+// Window Resize Event
+window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Orbit Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.25;
+controls.screenSpacePanning = false;
+
+
 
