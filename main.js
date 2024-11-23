@@ -30,21 +30,24 @@ moonLight.position.set(10, 20, -10);
 moonLight.castShadow = true;
 scene.add(moonLight);
 
-// Physics
+// Physics Initialization
 let physicsWorld;
-Ammo().then((AmmoLib) => {
-  AmmoLib = Ammo;
-  physicsWorld = new AmmoPhysics(scene, AmmoLib);
+Ammo().then(() => {
+  physicsWorld = new AmmoPhysics(scene);
+  setupScene(); // Function to add objects after AmmoPhysics is ready
 });
 
 // Floor
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(50, 50),
-  new THREE.MeshStandardMaterial({ color: 0x003300 }) // Dark green
-);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
+function setupScene() {
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(50, 50),
+    new THREE.MeshStandardMaterial({ color: 0x003300 }) // Dark green
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  physicsWorld.addMesh(ground, 0); // Add ground to physics
+}
 
 // Particle System
 const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
@@ -52,7 +55,11 @@ const particleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const particles = [];
 for (let i = 0; i < 100; i++) {
   const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-  particle.position.set(Math.random() * 50 - 25, Math.random() * 50, Math.random() * 50 - 25);
+  particle.position.set(
+    Math.random() * 50 - 25,
+    Math.random() * 50,
+    Math.random() * 50 - 25
+  );
   scene.add(particle);
   particles.push(particle);
 }
@@ -77,21 +84,18 @@ window.addEventListener("mousemove", onMouseMove);
 const clock = new THREE.Clock();
 const animate = () => {
   const deltaTime = clock.getDelta();
-  
+
   // Physics World Update
   if (physicsWorld) {
     physicsWorld.update(deltaTime);
   }
-  
+
   // Update Particles
   particles.forEach((particle) => {
     particle.position.y -= 0.1; // Gravity effect
     if (particle.position.y < -25) particle.position.y = 25; // Reset particles
   });
 
-  // Raycasting to detect mouse interaction
-  raycaster.update(camera, mouse);
-  
   // Render the scene
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
