@@ -119,12 +119,11 @@ for (let i = 0; i < 30; i++) {  // Increased raycasting objects to 30
     objectMaterial
   );
   object.position.set(x, size / 2, z);
-  object.rotationSpeed = Math.random() * 0.02 + 0.01;  // Set rotation speed
   raycastingObjects.push(object);
   scene.add(object);
 }
 
-// Raycasting
+// Raycasting Setup
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let intersectedObject = null;
@@ -168,7 +167,7 @@ const animate = () => {
 
   // Rotate all raycasting objects
   raycastingObjects.forEach(object => {
-    object.rotation.y += object.rotationSpeed; // Continue rotating
+    object.rotation.y += 0.01; // Rotation
   });
 
   controls.update();
@@ -184,3 +183,4 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
