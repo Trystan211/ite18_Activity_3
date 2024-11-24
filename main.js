@@ -1,8 +1,14 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
 
+let Ammo; // Placeholder for Ammo.js
+
 // Load Ammo.js
-await Ammo();
+const loadAmmo = async () => {
+  Ammo = await Ammo(); // Ammo is initialized here
+};
+
+await loadAmmo(); // Load Ammo.js before initializing the physics world
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101010);
@@ -25,12 +31,11 @@ spotlight.castShadow = true;
 scene.add(spotlight);
 
 // Ammo.js Physics World
-const physicsWorld = new Ammo.btDiscreteDynamicsWorld(
-  new Ammo.btDefaultCollisionConfiguration(),
-  new Ammo.btCollisionDispatcher(new Ammo.btDefaultCollisionConfiguration()),
-  new Ammo.btDbvtBroadphase(),
-  new Ammo.btSequentialImpulseConstraintSolver()
-);
+const collisionConfig = new Ammo.btDefaultCollisionConfiguration();
+const dispatcher = new Ammo.btCollisionDispatcher(collisionConfig);
+const broadphase = new Ammo.btDbvtBroadphase();
+const solver = new Ammo.btSequentialImpulseConstraintSolver();
+const physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
 physicsWorld.setGravity(new Ammo.btVector3(0, -9.82, 0));
 
 // Helper functions for Ammo.js
@@ -85,43 +90,6 @@ for (let i = 0; i < 10; i++) {
   sphereBodies.push(sphereBody);
 }
 
-// Particles (e.g., snow/dust)
-const particleCount = 500;
-const particlesGeometry = new THREE.BufferGeometry();
-const particlesPositions = [];
-const particlesSpeeds = [];
-
-for (let i = 0; i < particleCount; i++) {
-  particlesPositions.push((Math.random() - 0.5) * 20); // x
-  particlesPositions.push(Math.random() * 10 + 5); // y
-  particlesPositions.push((Math.random() - 0.5) * 20); // z
-  particlesSpeeds.push(Math.random() * 0.02 + 0.01); // Falling speed
-}
-
-particlesGeometry.setAttribute(
-  "position",
-  new THREE.Float32BufferAttribute(particlesPositions, 3)
-);
-
-const particlesMaterial = new THREE.PointsMaterial({
-  color: 0xffffff,
-  size: 0.1,
-  transparent: true,
-  opacity: 0.8,
-});
-
-const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-scene.add(particles);
-
-// Scroll-Based Animation
-let scrollProgress = 0;
-
-window.addEventListener("scroll", () => {
-  const scrollY = window.scrollY;
-  const maxScrollHeight = document.body.scrollHeight - window.innerHeight;
-  scrollProgress = scrollY / maxScrollHeight; // Progress from 0 to 1
-});
-
 // Camera Control
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -146,20 +114,6 @@ const animate = () => {
     sphereMesh.position.set(origin.x(), origin.y(), origin.z());
     sphereMesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
   }
-
-  // Animate particles
-  const positions = particlesGeometry.attributes.position.array;
-  for (let i = 0; i < particleCount; i++) {
-    positions[i * 3 + 1] -= particlesSpeeds[i]; // Move down in y-axis
-    if (positions[i * 3 + 1] < -1) {
-      positions[i * 3 + 1] = Math.random() * 10 + 5; // Reset position
-    }
-  }
-  particlesGeometry.attributes.position.needsUpdate = true;
-
-  // Camera scroll-based animation
-  camera.position.y = 2 + scrollProgress * 5; // Move upward with scroll
-  camera.lookAt(0, 0, 0);
 
   controls.update();
   renderer.render(scene, camera);
