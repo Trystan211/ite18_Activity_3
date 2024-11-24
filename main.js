@@ -46,7 +46,7 @@ function animateSnow() {
 
 // Ground (White floor for snow)
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(60, 90),
+  new THREE.PlaneGeometry(50, 70),
   new THREE.MeshStandardMaterial({ color: 0xffffff })
 );
 ground.rotation.x = -Math.PI / 2;
@@ -68,7 +68,7 @@ scene.add(ambientLight);
 // Trees (Increased count and made them cone-shaped)
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-for (let i = 0; i < 50; i++) {  // Increased tree count to 40
+for (let i = 0; i < 40; i++) {  // Increased tree count to 250
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
   
@@ -90,9 +90,9 @@ for (let i = 0; i < 50; i++) {  // Increased tree count to 40
   scene.add(foliage);
 }
 
-// Bushes (Increased count to 30)
+// Bushes (Increased count to 150)
 const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-for (let i = 0; i < 30; i++) {  // Increased bushes count to 30
+for (let i = 0; i < 30; i++) {  // Increased bushes count to 150
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
 
@@ -130,27 +130,27 @@ const mouse = new THREE.Vector2();
 let intersectedObject = null;
 
 window.addEventListener('click', (event) => {
-  // Update mouse coordinates
+  // Update mouse position
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  // Update the raycaster with the mouse position
+  // Update raycaster with mouse position
   raycaster.update();
 
-  // Get the objects intersected by the ray
+  // Check for intersections with the raycasting objects
   const intersects = raycaster.intersectObjects(raycastingObjects);
 
   if (intersects.length > 0) {
-    // If there was a previous intersected object, reset its color and scale
+    // If there is a previously selected object, reset it
     if (intersectedObject) {
-      intersectedObject.material.color.set(0xff0000);  // Reset previous object to original color
-      intersectedObject.scale.set(1, 1, 1);  // Reset size
+      intersectedObject.material.color.set(0xff0000); // Reset the color
+      intersectedObject.scale.set(1, 1, 1); // Reset the scale
     }
 
-    // Set the new intersected object
+    // Set the new intersected object and change color and size
     intersectedObject = intersects[0].object;
-    intersectedObject.material.color.set(0x00ff00);  // Change clicked object color
-    intersectedObject.scale.set(1.5, 1.5, 1.5);  // Increase size of clicked object
+    intersectedObject.material.color.set(0x00ff00); // New color
+    intersectedObject.scale.set(1.5, 1.5, 1.5); // Increase size
   }
 });
 
@@ -166,9 +166,9 @@ const animate = () => {
   
   animateSnow();  // Animate snowflakes falling
 
-  // Rotate raycasting objects
+  // Rotate all raycasting objects
   raycastingObjects.forEach(object => {
-    object.rotation.y += object.rotationSpeed;  // Rotate each object
+    object.rotation.y += object.rotationSpeed; // Continue rotating
   });
 
   controls.update();
