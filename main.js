@@ -46,7 +46,7 @@ function animateSnow() {
 
 // Ground (White floor for snow)
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(50, 70),
+  new THREE.PlaneGeometry(60, 90),
   new THREE.MeshStandardMaterial({ color: 0xffffff })
 );
 ground.rotation.x = -Math.PI / 2;
@@ -68,7 +68,7 @@ scene.add(ambientLight);
 // Trees (Increased count and made them cone-shaped)
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-for (let i = 0; i < 30; i++) {  // Increased tree count to 40
+for (let i = 0; i < 50; i++) {  // Increased tree count to 40
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
   
@@ -92,7 +92,7 @@ for (let i = 0; i < 30; i++) {  // Increased tree count to 40
 
 // Bushes (Increased count to 30)
 const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-for (let i = 0; i < 20; i++) {  // Increased bushes count to 30
+for (let i = 0; i < 30; i++) {  // Increased bushes count to 30
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
 
