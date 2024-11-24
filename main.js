@@ -68,7 +68,7 @@ scene.add(ambientLight);
 // Trees (Increased count and made them cone-shaped)
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-for (let i = 0; i < 250; i++) {  // Increased tree count to 250
+for (let i = 0; i < 40; i++) {  // Increased tree count to 250
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
   
@@ -92,7 +92,7 @@ for (let i = 0; i < 250; i++) {  // Increased tree count to 250
 
 // Bushes (Increased count to 150)
 const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-for (let i = 0; i < 150; i++) {  // Increased bushes count to 150
+for (let i = 0; i < 30; i++) {  // Increased bushes count to 150
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
 
