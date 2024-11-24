@@ -130,15 +130,24 @@ const mouse = new THREE.Vector2();
 let intersectedObject = null;
 
 window.addEventListener('click', (event) => {
+  // Update mouse coordinates
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
+  // Update the raycaster with the mouse position
   raycaster.update();
+
+  // Get the objects intersected by the ray
   const intersects = raycaster.intersectObjects(raycastingObjects);
+
   if (intersects.length > 0) {
+    // If there was a previous intersected object, reset its color and scale
     if (intersectedObject) {
       intersectedObject.material.color.set(0xff0000);  // Reset previous object to original color
+      intersectedObject.scale.set(1, 1, 1);  // Reset size
     }
+
+    // Set the new intersected object
     intersectedObject = intersects[0].object;
     intersectedObject.material.color.set(0x00ff00);  // Change clicked object color
     intersectedObject.scale.set(1.5, 1.5, 1.5);  // Increase size of clicked object
