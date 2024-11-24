@@ -1,126 +1,183 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
 
+// Scene, Camera, Renderer
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x101010);
+scene.background = new THREE.Color(0x99ccff); // Light blue sky
+scene.fog = new THREE.Fog(0x99ccff, 20, 100); // Soft fog effect
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 2, 10);
+camera.position.set(0, 10, 20);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// White Floor for Snow
+const snowMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+const snowFloor = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 100),
+  snowMaterial
+);
+snowFloor.rotation.x = -Math.PI / 2;
+snowFloor.receiveShadow = true;
+scene.add(snowFloor);
+
+// Lights
+const ambientLight = new THREE.AmbientLight(0x666666, 0.8);
 scene.add(ambientLight);
 
-const spotlight = new THREE.SpotLight(0xffffff, 1);
-spotlight.position.set(5, 10, 5);
-spotlight.castShadow = true;
-scene.add(spotlight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(10, 20, 10);
+directionalLight.castShadow = true;
+scene.add(directionalLight);
 
-// Ground
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({ color: 0x444444 })
-);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
+// Trees
+const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
+const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
 
-// Interactive Objects
-const objects = [];
-const createSphere = (x, y, z, color) => {
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 16, 16),
-    new THREE.MeshStandardMaterial({ color })
+for (let i = 0; i < 20; i++) {
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.5, 3, 16),
+    trunkMaterial
   );
-  sphere.position.set(x, y, z);
-  sphere.castShadow = true;
-  objects.push(sphere);
-  scene.add(sphere);
-};
+  const foliage = new THREE.Mesh(
+    new THREE.ConeGeometry(1.5, 4, 8),
+    treeMaterial
+  );
+  
+  trunk.position.set(
+    Math.random() * 80 - 40,
+    1.5,
+    Math.random() * 80 - 40
+  );
+  foliage.position.set(trunk.position.x, trunk.position.y + 3, trunk.position.z);
+
+  trunk.castShadow = true;
+  foliage.castShadow = true;
+
+  scene.add(trunk);
+  scene.add(foliage);
+}
+
+// Bushes
+const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+for (let i = 0; i < 30; i++) {
+  const bush = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 8, 8),
+    bushMaterial
+  );
+  bush.position.set(
+    Math.random() * 80 - 40,
+    0.5,
+    Math.random() * 80 - 40
+  );
+  bush.castShadow = true;
+  scene.add(bush);
+}
+
+// Rotating Raycasting Objects
+const rotatingObjects = [];
+const rotatingMaterial = new THREE.MeshStandardMaterial({ color: 0xff6347 });
 
 for (let i = 0; i < 10; i++) {
-  createSphere(Math.random() * 10 - 5, 0.5, Math.random() * 10 - 5, 0x44aa88);
+  const rotatingObject = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    rotatingMaterial
+  );
+  rotatingObject.position.set(
+    Math.random() * 50 - 25,
+    Math.random() * 5 + 2,
+    Math.random() * 50 - 25
+  );
+  rotatingObject.castShadow = true;
+  rotatingObjects.push(rotatingObject);
+  scene.add(rotatingObject);
 }
+
+// Particle System (Snow)
+const particleCount = 500;
+const particles = new THREE.BufferGeometry();
+const positions = [];
+const particleMaterial = new THREE.PointsMaterial({
+  color: 0xffffff,
+  size: 0.2,
+  transparent: true,
+  opacity: 0.8,
+});
+
+for (let i = 0; i < particleCount; i++) {
+  positions.push(
+    Math.random() * 100 - 50, // X
+    Math.random() * 50 + 10, // Y
+    Math.random() * 100 - 50 // Z
+  );
+}
+
+particles.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(positions, 3)
+);
+
+const particleSystem = new THREE.Points(particles, particleMaterial);
+scene.add(particleSystem);
 
 // Raycaster
 const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-const onPointerMove = (event) => {
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-};
+const mouse = new THREE.Vector2();
 
-const onPointerClick = () => {
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(objects);
-  if (intersects.length > 0) {
-    const selectedObject = intersects[0].object;
-    selectedObject.material.color.set(0xff0000); // Change color on click
-  }
-};
+// Click Event for Raycasting
+window.addEventListener('click', (event) => {
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(rotatingObjects);
 
-// Particles
-const particleCount = 500;
-const particleGeometry = new THREE.BufferGeometry();
-const positions = [];
-for (let i = 0; i < particleCount; i++) {
-  positions.push(Math.random() * 20 - 10, Math.random() * 5 + 1, Math.random() * 20 - 10);
-}
-particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-const particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
-const particles = new THREE.Points(particleGeometry, particleMaterial);
-scene.add(particles);
+  intersects.forEach((intersect) => {
+    intersect.object.material.color.set(0x00ff00); // Change color to green on click
+  });
+});
 
-// Scroll-Based Animation
-let scrollY = 0;
-window.addEventListener("scroll", () => {
-  scrollY = window.scrollY / window.innerHeight; // Normalize scroll
-  camera.position.y = 2 + scrollY * 5; // Adjust camera height based on scroll
+// Mouse Move for Raycasting
+window.addEventListener('mousemove', (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
 
 // Camera Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// Animation Loop
+// Animation
 const clock = new THREE.Clock();
-const animate = () => {
-  const elapsedTime = clock.getElapsedTime();
 
-  // Animate particles
-  const positions = particleGeometry.attributes.position.array;
-  for (let i = 0; i < positions.length; i += 3) {
-    positions[i + 1] += Math.sin(elapsedTime + positions[i]) * 0.005;
-  }
-  particleGeometry.attributes.position.needsUpdate = true;
+function animate() {
+  const delta = clock.getDelta();
 
-  // Raycaster highlight
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(objects);
-  objects.forEach((obj) => obj.material.emissive && obj.material.emissive.set(0x000000));
-  if (intersects.length > 0) {
-    intersects[0].object.material.emissive = new THREE.Color(0x4444ff); // Highlight color
+  // Rotate objects
+  rotatingObjects.forEach((obj) => {
+    obj.rotation.x += delta * 0.5;
+    obj.rotation.y += delta * 0.3;
+  });
+
+  // Snowfall effect
+  const positions = particleSystem.geometry.attributes.position.array;
+  for (let i = 1; i < positions.length; i += 3) {
+    positions[i] -= delta * 2; // Y-axis downward
+    if (positions[i] < 0) positions[i] = 50 + Math.random() * 10;
   }
+  particleSystem.geometry.attributes.position.needsUpdate = true;
 
   controls.update();
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
-};
+}
 
-animate();
-
-// Event Listeners
-window.addEventListener("mousemove", onPointerMove);
-window.addEventListener("click", onPointerClick);
-
-// Handle window resize
-window.addEventListener("resize", () => {
+// Handle Window Resize
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+animate();
+
