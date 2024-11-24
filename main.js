@@ -1,15 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
 
-let Ammo; // Placeholder for Ammo.js
-
-// Load Ammo.js
-const loadAmmo = async () => {
-  Ammo = await Ammo(); // Ammo is initialized here
-};
-
-await loadAmmo(); // Load Ammo.js before initializing the physics world
-
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101010);
 
@@ -30,89 +21,90 @@ spotlight.position.set(5, 10, 5);
 spotlight.castShadow = true;
 scene.add(spotlight);
 
-// Ammo.js Physics World
-const collisionConfig = new Ammo.btDefaultCollisionConfiguration();
-const dispatcher = new Ammo.btCollisionDispatcher(collisionConfig);
-const broadphase = new Ammo.btDbvtBroadphase();
-const solver = new Ammo.btSequentialImpulseConstraintSolver();
-const physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
-physicsWorld.setGravity(new Ammo.btVector3(0, -9.82, 0));
-
-// Helper functions for Ammo.js
-const createRigidBody = (mesh, shape, mass = 0) => {
-  const transform = new Ammo.btTransform();
-  transform.setIdentity();
-  transform.setOrigin(new Ammo.btVector3(mesh.position.x, mesh.position.y, mesh.position.z));
-  const motionState = new Ammo.btDefaultMotionState(transform);
-
-  const localInertia = new Ammo.btVector3(0, 0, 0);
-  if (mass > 0) shape.calculateLocalInertia(mass, localInertia);
-
-  const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
-  const body = new Ammo.btRigidBody(rbInfo);
-  physicsWorld.addRigidBody(body);
-
-  return body;
-};
-
 // Ground
-const groundMesh = new THREE.Mesh(
+const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(20, 20),
   new THREE.MeshStandardMaterial({ color: 0x444444 })
 );
-groundMesh.rotation.x = -Math.PI / 2;
-groundMesh.receiveShadow = true;
-scene.add(groundMesh);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
 
-const groundShape = new Ammo.btBoxShape(new Ammo.btVector3(10, 0.5, 10));
-createRigidBody(groundMesh, groundShape, 0);
-
-// Falling Spheres
-const sphereMeshes = [];
-const sphereBodies = [];
+// Interactive Objects
+const objects = [];
+const createSphere = (x, y, z, color) => {
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 16, 16),
+    new THREE.MeshStandardMaterial({ color })
+  );
+  sphere.position.set(x, y, z);
+  sphere.castShadow = true;
+  objects.push(sphere);
+  scene.add(sphere);
+};
 
 for (let i = 0; i < 10; i++) {
-  const radius = 0.5;
-
-  // Three.js sphere
-  const sphereMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0x44aa88 })
-  );
-  sphereMesh.position.set(Math.random() * 5 - 2.5, 5 + i, Math.random() * 5 - 2.5);
-  sphereMesh.castShadow = true;
-  scene.add(sphereMesh);
-  sphereMeshes.push(sphereMesh);
-
-  // Ammo.js sphere
-  const sphereShape = new Ammo.btSphereShape(radius);
-  const sphereBody = createRigidBody(sphereMesh, sphereShape, 1);
-  sphereBodies.push(sphereBody);
+  createSphere(Math.random() * 10 - 5, 0.5, Math.random() * 10 - 5, 0x44aa88);
 }
 
-// Camera Control
+// Raycaster
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const onPointerMove = (event) => {
+  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+};
+
+const onPointerClick = () => {
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(objects);
+  if (intersects.length > 0) {
+    const selectedObject = intersects[0].object;
+    selectedObject.material.color.set(0xff0000); // Change color on click
+  }
+};
+
+// Particles
+const particleCount = 500;
+const particleGeometry = new THREE.BufferGeometry();
+const positions = [];
+for (let i = 0; i < particleCount; i++) {
+  positions.push(Math.random() * 20 - 10, Math.random() * 5 + 1, Math.random() * 20 - 10);
+}
+particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+const particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+const particles = new THREE.Points(particleGeometry, particleMaterial);
+scene.add(particles);
+
+// Scroll-Based Animation
+let scrollY = 0;
+window.addEventListener("scroll", () => {
+  scrollY = window.scrollY / window.innerHeight; // Normalize scroll
+  camera.position.y = 2 + scrollY * 5; // Adjust camera height based on scroll
+});
+
+// Camera Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // Animation Loop
 const clock = new THREE.Clock();
 const animate = () => {
-  const delta = clock.getDelta();
+  const elapsedTime = clock.getElapsedTime();
 
-  // Update Ammo.js physics world
-  physicsWorld.stepSimulation(delta, 10);
+  // Animate particles
+  const positions = particleGeometry.attributes.position.array;
+  for (let i = 0; i < positions.length; i += 3) {
+    positions[i + 1] += Math.sin(elapsedTime + positions[i]) * 0.005;
+  }
+  particleGeometry.attributes.position.needsUpdate = true;
 
-  // Update sphere positions
-  for (let i = 0; i < sphereMeshes.length; i++) {
-    const body = sphereBodies[i];
-    const sphereMesh = sphereMeshes[i];
-    const transform = new Ammo.btTransform();
-    body.getMotionState().getWorldTransform(transform);
-    const origin = transform.getOrigin();
-    const rotation = transform.getRotation();
-
-    sphereMesh.position.set(origin.x(), origin.y(), origin.z());
-    sphereMesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+  // Raycaster highlight
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(objects);
+  objects.forEach((obj) => obj.material.emissive && obj.material.emissive.set(0x000000));
+  if (intersects.length > 0) {
+    intersects[0].object.material.emissive = new THREE.Color(0x4444ff); // Highlight color
   }
 
   controls.update();
@@ -121,6 +113,10 @@ const animate = () => {
 };
 
 animate();
+
+// Event Listeners
+window.addEventListener("mousemove", onPointerMove);
+window.addEventListener("click", onPointerClick);
 
 // Handle window resize
 window.addEventListener("resize", () => {
