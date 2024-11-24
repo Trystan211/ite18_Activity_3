@@ -46,7 +46,7 @@ function animateSnow() {
 
 // Ground (White floor for snow)
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(50, 50),
+  new THREE.PlaneGeometry(50, 70),
   new THREE.MeshStandardMaterial({ color: 0xffffff })
 );
 ground.rotation.x = -Math.PI / 2;
