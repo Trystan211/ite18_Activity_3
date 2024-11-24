@@ -68,7 +68,7 @@ scene.add(ambientLight);
 // Trees (Increased count and made them cone-shaped)
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-for (let i = 0; i < 50; i++) {  // Increased tree count to 50
+for (let i = 0; i < 150; i++) {  // Increased tree count to 150
   const x = Math.random() * 40 - 20;
   const z = Math.random() * 40 - 20;
   
@@ -92,7 +92,7 @@ for (let i = 0; i < 50; i++) {  // Increased tree count to 50
 
 // Bushes (Increased count to 100)
 const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-for (let i = 0; i < 25; i++) {  // Increased bushes count to 25
+for (let i = 0; i < 100; i++) {  // Increased bushes count to 100
   const x = Math.random() * 40 - 20;
   const z = Math.random() * 40 - 20;
 
@@ -109,7 +109,7 @@ for (let i = 0; i < 25; i++) {  // Increased bushes count to 25
 // Raycasting Objects (Increased count to 20)
 const raycastingObjects = [];
 const objectMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-for (let i = 0; i < 12; i++) {  // Increased raycasting objects to 12
+for (let i = 0; i < 20; i++) {  // Increased raycasting objects to 20
   const x = Math.random() * 40 - 20;
   const z = Math.random() * 40 - 20;
   const size = Math.random() * 2 + 1;
@@ -119,6 +119,7 @@ for (let i = 0; i < 12; i++) {  // Increased raycasting objects to 12
     objectMaterial
   );
   object.position.set(x, size / 2, z);
+  object.rotationSpeed = Math.random() * 0.02 + 0.01;  // Set rotation speed
   raycastingObjects.push(object);
   scene.add(object);
 }
@@ -155,6 +156,11 @@ const animate = () => {
   const elapsedTime = clock.getElapsedTime();
   
   animateSnow();  // Animate snowflakes falling
+
+  // Rotate raycasting objects
+  raycastingObjects.forEach(object => {
+    object.rotation.y += object.rotationSpeed;  // Rotate each object
+  });
 
   controls.update();
   renderer.render(scene, camera);
