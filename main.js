@@ -109,7 +109,7 @@ for (let i = 0; i < 30; i++) {  // Increased bushes count to 150
 // Raycasting Objects (Increased count to 30)
 const raycastingObjects = [];
 const objectMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-for (let i = 0; i < 30; i++) {  // Increased raycasting objects to 30
+for (let i = 0; i < 10; i++) {  // Increased raycasting objects to 30
   const x = Math.random() * 60 - 30;
   const z = Math.random() * 60 - 30;
   const size = Math.random() * 2 + 1;
