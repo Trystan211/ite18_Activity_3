@@ -65,10 +65,10 @@ scene.add(moonLight);
 const ambientLight = new THREE.AmbientLight(0x404040, 0.6);  // Soft ambient light
 scene.add(ambientLight);
 
-// Trees
+// Trees (Increased count and made them cone-shaped)
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-for (let i = 0; i < 100; i++) {  // Increased tree count to 100
+for (let i = 0; i < 150; i++) {  // Increased tree count to 150
   const x = Math.random() * 40 - 20;
   const z = Math.random() * 40 - 20;
   
@@ -90,9 +90,9 @@ for (let i = 0; i < 100; i++) {  // Increased tree count to 100
   scene.add(foliage);
 }
 
-// Bushes
+// Bushes (Increased count to 100)
 const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-for (let i = 0; i < 50; i++) {  // Increased bushes count to 50
+for (let i = 0; i < 100; i++) {  // Increased bushes count to 100
   const x = Math.random() * 40 - 20;
   const z = Math.random() * 40 - 20;
 
@@ -106,10 +106,10 @@ for (let i = 0; i < 50; i++) {  // Increased bushes count to 50
   scene.add(bush);
 }
 
-// Raycasting Objects
+// Raycasting Objects (Increased count to 20)
 const raycastingObjects = [];
 const objectMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-for (let i = 0; i < 10; i++) {  // Increased raycasting objects to 10
+for (let i = 0; i < 20; i++) {  // Increased raycasting objects to 20
   const x = Math.random() * 40 - 20;
   const z = Math.random() * 40 - 20;
   const size = Math.random() * 2 + 1;
@@ -169,3 +169,5 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+
