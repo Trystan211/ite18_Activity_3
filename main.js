@@ -1,120 +1,131 @@
-import * as THREE from "three";
-import { AmmoPhysics } from "three/addons/physics/AmmoPhysics.js";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
+import { CannonPhysics } from 'https://cdn.jsdelivr.net/npm/cannon-es';
 
-// Scene Setup
+// Scene, Camera, Renderer
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000); // Black background
+scene.background = new THREE.Color(0x101010);
 
-// Camera Setup
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100
-);
-camera.position.set(10, 10, 15);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 2, 10);
 
-// Renderer Setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 // Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); // Dim ambient light
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
-const moonLight = new THREE.DirectionalLight(0x88aaff, 0.2); // Moonlight effect
-moonLight.position.set(10, 20, -10);
-moonLight.castShadow = true;
-scene.add(moonLight);
+const spotlight = new THREE.SpotLight(0xffffff, 1);
+spotlight.position.set(5, 10, 5);
+spotlight.castShadow = true;
+scene.add(spotlight);
 
-// Physics Initialization
-let physicsWorld;
-Ammo().then(() => {
-  physicsWorld = new AmmoPhysics(scene);
-  setupScene(); // Function to add objects after AmmoPhysics is ready
+// Particle System (Snow)
+const particleCount = 500;
+const particlesGeometry = new THREE.BufferGeometry();
+const particlesPositions = [];
+const particlesSpeeds = [];
+
+for (let i = 0; i < particleCount; i++) {
+  particlesPositions.push((Math.random() - 0.5) * 20); // x
+  particlesPositions.push(Math.random() * 10 + 5); // y
+  particlesPositions.push((Math.random() - 0.5) * 20); // z
+  particlesSpeeds.push(Math.random() * 0.02 + 0.01); // Falling speed
+}
+
+particlesGeometry.setAttribute(
+  "position",
+  new THREE.Float32BufferAttribute(particlesPositions, 3)
+);
+
+const particlesMaterial = new THREE.PointsMaterial({
+  color: 0xffffff,
+  size: 0.1,
+  transparent: true,
+  opacity: 0.8,
 });
 
-// Floor
-function setupScene() {
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(50, 50),
-    new THREE.MeshStandardMaterial({ color: 0x003300 }) // Dark green
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
+
+// Physics Setup
+const physicsWorld = new CannonPhysics();
+
+const floorBody = physicsWorld.createPlane({ mass: 0 });
+floorBody.position.set(0, -0.5, 0);
+
+const sphereBodies = [];
+const sphereMeshes = [];
+
+// Generate falling spheres
+for (let i = 0; i < 10; i++) {
+  const radius = 0.5;
+  const sphereBody = physicsWorld.createSphere({ mass: 1, radius });
+  sphereBody.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
+  sphereBodies.push(sphereBody);
+
+  const sphereMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0x44aa88 })
   );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
-  physicsWorld.addMesh(ground, 0); // Add ground to physics
+  sphereMesh.castShadow = true;
+  sphereMeshes.push(sphereMesh);
+  scene.add(sphereMesh);
 }
 
-// Particle System
-const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-const particleMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const particles = [];
-for (let i = 0; i < 100; i++) {
-  const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-  particle.position.set(
-    Math.random() * 50 - 25,
-    Math.random() * 50,
-    Math.random() * 50 - 25
-  );
-  scene.add(particle);
-  particles.push(particle);
-}
+// Scroll-Based Animation
+let scrollProgress = 0;
 
-// Scroll-based Animation
-let scrollSpeed = 0;
 window.addEventListener("scroll", () => {
-  scrollSpeed = window.scrollY * 0.01;
-  camera.position.z = 15 + scrollSpeed; // Adjust camera position based on scroll
+  const scrollY = window.scrollY;
+  const maxScrollHeight = document.body.scrollHeight - window.innerHeight;
+  scrollProgress = scrollY / maxScrollHeight; // Progress from 0 to 1
 });
 
-// Raycasting and Mouse Events
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-const onMouseMove = (event) => {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-};
-window.addEventListener("mousemove", onMouseMove);
+// Camera Control
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-// Update Physics and Objects
+// Animation Loop
 const clock = new THREE.Clock();
 const animate = () => {
-  const deltaTime = clock.getDelta();
+  const delta = clock.getDelta();
 
-  // Physics World Update
-  if (physicsWorld) {
-    physicsWorld.update(deltaTime);
+  // Animate particles
+  const positions = particlesGeometry.attributes.position.array;
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3 + 1] -= particlesSpeeds[i]; // Move down in y-axis
+    if (positions[i * 3 + 1] < -1) {
+      positions[i * 3 + 1] = Math.random() * 10 + 5; // Reset position
+    }
   }
+  particlesGeometry.attributes.position.needsUpdate = true;
 
-  // Update Particles
-  particles.forEach((particle) => {
-    particle.position.y -= 0.1; // Gravity effect
-    if (particle.position.y < -25) particle.position.y = 25; // Reset particles
+  // Animate spheres with physics
+  sphereBodies.forEach((body, idx) => {
+    const mesh = sphereMeshes[idx];
+    mesh.position.copy(body.position);
+    mesh.quaternion.copy(body.quaternion);
   });
 
-  // Render the scene
+  // Camera scroll-based animation
+  camera.position.y = 2 + scrollProgress * 5; // Move upward with scroll
+  camera.lookAt(0, 0, 0);
+
+  controls.update();
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 };
 
 animate();
 
-// Window Resize Event
+// Handle window resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-// Orbit Controls
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.25;
-controls.screenSpacePanning = false;
-
-
 
