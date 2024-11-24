@@ -1,6 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
-import { CannonPhysics } from 'https://cdn.jsdelivr.net/npm/cannon-es';
+import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js';
 
 // Scene, Camera, Renderer
 const scene = new THREE.Scene();
@@ -51,22 +51,33 @@ const particlesMaterial = new THREE.PointsMaterial({
 const particles = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(particles);
 
-// Physics Setup
-const physicsWorld = new CannonPhysics();
+// Physics World Setup
+const physicsWorld = new CANNON.World();
+physicsWorld.gravity.set(0, -9.82, 0); // Gravity pointing down
 
-const floorBody = physicsWorld.createPlane({ mass: 0 });
-floorBody.position.set(0, -0.5, 0);
+// Create a floor body
+const floorShape = new CANNON.Plane();
+const floorBody = new CANNON.Body({ mass: 0 }); // Static body
+floorBody.addShape(floorShape);
+floorBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // Rotate to horizontal
+physicsWorld.addBody(floorBody);
 
+// Falling spheres
 const sphereBodies = [];
 const sphereMeshes = [];
 
-// Generate falling spheres
 for (let i = 0; i < 10; i++) {
   const radius = 0.5;
-  const sphereBody = physicsWorld.createSphere({ mass: 1, radius });
+
+  // Physics sphere
+  const sphereShape = new CANNON.Sphere(radius);
+  const sphereBody = new CANNON.Body({ mass: 1 });
+  sphereBody.addShape(sphereShape);
   sphereBody.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
   sphereBodies.push(sphereBody);
+  physicsWorld.addBody(sphereBody);
 
+  // Three.js sphere
   const sphereMesh = new THREE.Mesh(
     new THREE.SphereGeometry(radius, 16, 16),
     new THREE.MeshStandardMaterial({ color: 0x44aa88 })
@@ -94,6 +105,14 @@ const clock = new THREE.Clock();
 const animate = () => {
   const delta = clock.getDelta();
 
+  // Update physics world
+  physicsWorld.step(1 / 60, delta, 3);
+  sphereBodies.forEach((body, idx) => {
+    const mesh = sphereMeshes[idx];
+    mesh.position.copy(body.position);
+    mesh.quaternion.copy(body.quaternion);
+  });
+
   // Animate particles
   const positions = particlesGeometry.attributes.position.array;
   for (let i = 0; i < particleCount; i++) {
@@ -103,13 +122,6 @@ const animate = () => {
     }
   }
   particlesGeometry.attributes.position.needsUpdate = true;
-
-  // Animate spheres with physics
-  sphereBodies.forEach((body, idx) => {
-    const mesh = sphereMeshes[idx];
-    mesh.position.copy(body.position);
-    mesh.quaternion.copy(body.quaternion);
-  });
 
   // Camera scroll-based animation
   camera.position.y = 2 + scrollProgress * 5; // Move upward with scroll
@@ -128,4 +140,3 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
