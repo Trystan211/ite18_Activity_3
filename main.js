@@ -3,8 +3,8 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/exampl
 
 // Scene, Camera, Renderer
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x99ccff); // Light blue sky
-scene.fog = new THREE.Fog(0x99ccff, 20, 100); // Soft fog effect
+scene.background = new THREE.Color(0x556677); // Darker background color for moody effect
+scene.fog = new THREE.Fog(0x556677, 20, 100); // Soft fog with darker tone
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 10, 20);
@@ -24,11 +24,11 @@ snowFloor.rotation.x = -Math.PI / 2;
 snowFloor.receiveShadow = true;
 scene.add(snowFloor);
 
-// Lights
-const ambientLight = new THREE.AmbientLight(0x666666, 0.8);
+// Lights (Darker)
+const ambientLight = new THREE.AmbientLight(0x555555, 0.6); // Dimmer ambient light
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7); // Slightly darker directional light
 directionalLight.position.set(10, 20, 10);
 directionalLight.castShadow = true;
 scene.add(directionalLight);
@@ -77,27 +77,43 @@ for (let i = 0; i < 30; i++) {
   scene.add(bush);
 }
 
-// Rotating Raycasting Objects
+// Rotating Raycasting Objects (Different Shapes & Materials)
 const rotatingObjects = [];
 const rotatingMaterial = new THREE.MeshStandardMaterial({ color: 0xff6347 });
 
 for (let i = 0; i < 10; i++) {
-  const rotatingObject = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    rotatingMaterial
-  );
+  let rotatingObject;
+  if (i % 3 === 0) {
+    rotatingObject = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      rotatingMaterial
+    );
+  } else if (i % 3 === 1) {
+    rotatingObject = new THREE.Mesh(
+      new THREE.SphereGeometry(1),
+      rotatingMaterial
+    );
+  } else {
+    rotatingObject = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, 2, 16),
+      rotatingMaterial
+    );
+  }
+
   rotatingObject.position.set(
     Math.random() * 50 - 25,
     Math.random() * 5 + 2,
     Math.random() * 50 - 25
   );
   rotatingObject.castShadow = true;
+  rotatingObject.userData = { id: i }; // Assign a unique ID for each object
+
   rotatingObjects.push(rotatingObject);
   scene.add(rotatingObject);
 }
 
 // Particle System (Snow)
-const particleCount = 500;
+const particleCount = 1500; // Increased particles for denser snowfall
 const particles = new THREE.BufferGeometry();
 const positions = [];
 const particleMaterial = new THREE.PointsMaterial({
@@ -127,13 +143,20 @@ scene.add(particleSystem);
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Click Event for Raycasting
+// Click Event for Raycasting (Only change the clicked object)
 window.addEventListener('click', (event) => {
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(rotatingObjects);
 
+  rotatingObjects.forEach((obj) => {
+    obj.material.color.set(0xff6347); // Reset color to default
+    obj.scale.set(1, 1, 1); // Reset size to default
+  });
+
   intersects.forEach((intersect) => {
-    intersect.object.material.color.set(0x00ff00); // Change color to green on click
+    const object = intersect.object;
+    object.material.color.set(0x00ff00); // Change color to green on click
+    object.scale.set(1.5, 1.5, 1.5); // Increase size of clicked object
   });
 });
 
