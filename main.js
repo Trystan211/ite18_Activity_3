@@ -34,6 +34,17 @@ scene.add(moonLight);
 const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
 scene.add(ambientLight);
 
+// Spotlights to enhance the atmosphere
+const spotlight1 = new THREE.SpotLight(0xffffff, 0.3);
+spotlight1.position.set(10, 20, 10);
+spotlight1.castShadow = true;
+scene.add(spotlight1);
+
+const spotlight2 = new THREE.SpotLight(0xffffff, 0.3);
+spotlight2.position.set(-10, 20, -10);
+spotlight2.castShadow = true;
+scene.add(spotlight2);
+
 // Raycaster
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -105,6 +116,51 @@ const particleMaterial = new THREE.PointsMaterial({
 const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
 scene.add(particleSystem);
 
+// Trees
+const createTree = (x, z) => {
+  const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2);
+  const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+  const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+  trunk.position.set(x, 1, z);
+  trunk.castShadow = true;
+  trunk.receiveShadow = true;
+
+  const foliageGeometry = new THREE.SphereGeometry(2);
+  const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+  const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+  foliage.position.set(x, 3, z);
+  foliage.castShadow = true;
+  foliage.receiveShadow = true;
+
+  scene.add(trunk);
+  scene.add(foliage);
+};
+
+// Add trees to the scene
+for (let i = 0; i < 3; i++) {
+  const x = Math.random() * 30 - 15;
+  const z = Math.random() * 30 - 15;
+  createTree(x, z);
+}
+
+// Bushes
+const createBush = (x, z) => {
+  const geometry = new THREE.SphereGeometry(1);
+  const material = new THREE.MeshStandardMaterial({ color: 0x6b8e23 });
+  const bush = new THREE.Mesh(geometry, material);
+  bush.position.set(x, 0.5, z);
+  bush.castShadow = true;
+  bush.receiveShadow = true;
+  scene.add(bush);
+};
+
+// Add bushes to the scene
+for (let i = 0; i < 5; i++) {
+  const x = Math.random() * 30 - 15;
+  const z = Math.random() * 30 - 15;
+  createBush(x, z);
+}
+
 // Animation
 const clock = new THREE.Clock();
 const animate = () => {
@@ -142,3 +198,4 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
