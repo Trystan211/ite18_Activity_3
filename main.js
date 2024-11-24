@@ -185,12 +185,13 @@ const animate = () => {
   requestAnimationFrame(animate);
 };
 
-animate();
-
 // Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.25;
+
+animate();
+
 
 // Handle window resize
 window.addEventListener("resize", () => {
