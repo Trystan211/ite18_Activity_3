@@ -1,8 +1,9 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
-import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js';
 
-// Scene, Camera, Renderer
+// Load Ammo.js
+await Ammo();
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101010);
 
@@ -23,7 +24,68 @@ spotlight.position.set(5, 10, 5);
 spotlight.castShadow = true;
 scene.add(spotlight);
 
-// Particle System (Snow)
+// Ammo.js Physics World
+const physicsWorld = new Ammo.btDiscreteDynamicsWorld(
+  new Ammo.btDefaultCollisionConfiguration(),
+  new Ammo.btCollisionDispatcher(new Ammo.btDefaultCollisionConfiguration()),
+  new Ammo.btDbvtBroadphase(),
+  new Ammo.btSequentialImpulseConstraintSolver()
+);
+physicsWorld.setGravity(new Ammo.btVector3(0, -9.82, 0));
+
+// Helper functions for Ammo.js
+const createRigidBody = (mesh, shape, mass = 0) => {
+  const transform = new Ammo.btTransform();
+  transform.setIdentity();
+  transform.setOrigin(new Ammo.btVector3(mesh.position.x, mesh.position.y, mesh.position.z));
+  const motionState = new Ammo.btDefaultMotionState(transform);
+
+  const localInertia = new Ammo.btVector3(0, 0, 0);
+  if (mass > 0) shape.calculateLocalInertia(mass, localInertia);
+
+  const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
+  const body = new Ammo.btRigidBody(rbInfo);
+  physicsWorld.addRigidBody(body);
+
+  return body;
+};
+
+// Ground
+const groundMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 20),
+  new THREE.MeshStandardMaterial({ color: 0x444444 })
+);
+groundMesh.rotation.x = -Math.PI / 2;
+groundMesh.receiveShadow = true;
+scene.add(groundMesh);
+
+const groundShape = new Ammo.btBoxShape(new Ammo.btVector3(10, 0.5, 10));
+createRigidBody(groundMesh, groundShape, 0);
+
+// Falling Spheres
+const sphereMeshes = [];
+const sphereBodies = [];
+
+for (let i = 0; i < 10; i++) {
+  const radius = 0.5;
+
+  // Three.js sphere
+  const sphereMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0x44aa88 })
+  );
+  sphereMesh.position.set(Math.random() * 5 - 2.5, 5 + i, Math.random() * 5 - 2.5);
+  sphereMesh.castShadow = true;
+  scene.add(sphereMesh);
+  sphereMeshes.push(sphereMesh);
+
+  // Ammo.js sphere
+  const sphereShape = new Ammo.btSphereShape(radius);
+  const sphereBody = createRigidBody(sphereMesh, sphereShape, 1);
+  sphereBodies.push(sphereBody);
+}
+
+// Particles (e.g., snow/dust)
 const particleCount = 500;
 const particlesGeometry = new THREE.BufferGeometry();
 const particlesPositions = [];
@@ -51,42 +113,6 @@ const particlesMaterial = new THREE.PointsMaterial({
 const particles = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(particles);
 
-// Physics World Setup
-const physicsWorld = new CANNON.World();
-physicsWorld.gravity.set(0, -9.82, 0); // Gravity pointing down
-
-// Create a floor body
-const floorShape = new CANNON.Plane();
-const floorBody = new CANNON.Body({ mass: 0 }); // Static body
-floorBody.addShape(floorShape);
-floorBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // Rotate to horizontal
-physicsWorld.addBody(floorBody);
-
-// Falling spheres
-const sphereBodies = [];
-const sphereMeshes = [];
-
-for (let i = 0; i < 10; i++) {
-  const radius = 0.5;
-
-  // Physics sphere
-  const sphereShape = new CANNON.Sphere(radius);
-  const sphereBody = new CANNON.Body({ mass: 1 });
-  sphereBody.addShape(sphereShape);
-  sphereBody.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
-  sphereBodies.push(sphereBody);
-  physicsWorld.addBody(sphereBody);
-
-  // Three.js sphere
-  const sphereMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 16, 16),
-    new THREE.MeshStandardMaterial({ color: 0x44aa88 })
-  );
-  sphereMesh.castShadow = true;
-  sphereMeshes.push(sphereMesh);
-  scene.add(sphereMesh);
-}
-
 // Scroll-Based Animation
 let scrollProgress = 0;
 
@@ -105,13 +131,21 @@ const clock = new THREE.Clock();
 const animate = () => {
   const delta = clock.getDelta();
 
-  // Update physics world
-  physicsWorld.step(1 / 60, delta, 3);
-  sphereBodies.forEach((body, idx) => {
-    const mesh = sphereMeshes[idx];
-    mesh.position.copy(body.position);
-    mesh.quaternion.copy(body.quaternion);
-  });
+  // Update Ammo.js physics world
+  physicsWorld.stepSimulation(delta, 10);
+
+  // Update sphere positions
+  for (let i = 0; i < sphereMeshes.length; i++) {
+    const body = sphereBodies[i];
+    const sphereMesh = sphereMeshes[i];
+    const transform = new Ammo.btTransform();
+    body.getMotionState().getWorldTransform(transform);
+    const origin = transform.getOrigin();
+    const rotation = transform.getRotation();
+
+    sphereMesh.position.set(origin.x(), origin.y(), origin.z());
+    sphereMesh.quaternion.set(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+  }
 
   // Animate particles
   const positions = particlesGeometry.attributes.position.array;
