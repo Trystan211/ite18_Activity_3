@@ -68,9 +68,9 @@ scene.add(ambientLight);
 // Trees (Increased count and made them cone-shaped)
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-for (let i = 0; i < 150; i++) {  // Increased tree count to 150
-  const x = Math.random() * 40 - 20;
-  const z = Math.random() * 40 - 20;
+for (let i = 0; i < 250; i++) {  // Increased tree count to 250
+  const x = Math.random() * 60 - 30;
+  const z = Math.random() * 60 - 30;
   
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.3, 0.5, 6, 16),
@@ -90,11 +90,11 @@ for (let i = 0; i < 150; i++) {  // Increased tree count to 150
   scene.add(foliage);
 }
 
-// Bushes (Increased count to 100)
+// Bushes (Increased count to 150)
 const bushMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
-for (let i = 0; i < 100; i++) {  // Increased bushes count to 100
-  const x = Math.random() * 40 - 20;
-  const z = Math.random() * 40 - 20;
+for (let i = 0; i < 150; i++) {  // Increased bushes count to 150
+  const x = Math.random() * 60 - 30;
+  const z = Math.random() * 60 - 30;
 
   const bush = new THREE.Mesh(
     new THREE.SphereGeometry(1.5, 16, 16),
@@ -106,12 +106,12 @@ for (let i = 0; i < 100; i++) {  // Increased bushes count to 100
   scene.add(bush);
 }
 
-// Raycasting Objects (Increased count to 20)
+// Raycasting Objects (Increased count to 30)
 const raycastingObjects = [];
 const objectMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-for (let i = 0; i < 20; i++) {  // Increased raycasting objects to 20
-  const x = Math.random() * 40 - 20;
-  const z = Math.random() * 40 - 20;
+for (let i = 0; i < 30; i++) {  // Increased raycasting objects to 30
+  const x = Math.random() * 60 - 30;
+  const z = Math.random() * 60 - 30;
   const size = Math.random() * 2 + 1;
   
   const object = new THREE.Mesh(
@@ -175,5 +175,3 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-
