@@ -55,7 +55,7 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 // Define model URL at the top
-const modelUrl = 'https://trystan211.github.io/ite18_Activity_3/lowpoly_fox.glb';
+const modelUrl = 'https://trystan211.github.io/ite18_Activity_3/low_poly_fox_by_pixelmannen_animated.glb';
 
 // Load the Fox Model
 const loader = new GLTFLoader();
