@@ -59,15 +59,23 @@ const modelUrl = 'https://trystan211.github.io/ite18_Activity_3/low_poly_fox_by_
 
 // Load the Fox Model
 const loader = new GLTFLoader();
-let foxMixer = null;  // Animation mixer for the fox
-let fox = null;  // Reference to the fox object
+let foxMixer = null; // Animation mixer for the fox
+let fox = null; // Reference to the fox object
 
 loader.load(
-  modelUrl,  // Use modelUrl here
+  modelUrl,
   (gltf) => {
     fox = gltf.scene;
-    fox.scale.set(0.1, 0.1, 0.1);  // Adjust size if needed
-    fox.position.set(0, 0, 0);  // Initial position
+    fox.position.set(0, 0, 0); // Initial position
+    fox.scale.set(0.1, 0.1, 0.1); // Significantly smaller fox
+
+    // Recursively apply the scaling to all child objects
+    fox.traverse((node) => {
+      if (node.isMesh) {
+        node.scale.set(0.1, 0.1, 0.1);
+      }
+    });
+
     scene.add(fox);
 
     // Handle animations if available
@@ -79,7 +87,7 @@ loader.load(
   },
   undefined,
   (error) => {
-    console.error('An error occurred while loading the fox model:', error);
+    console.error("An error occurred while loading the fox model:", error);
   }
 );
 
