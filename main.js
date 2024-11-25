@@ -60,7 +60,7 @@ let foxMixer = null;  // Animation mixer for the fox
 let fox = null;  // Reference to the fox object
 
 loader.load(
-  'path/to/fox-model.glb', // Replace with the path to your fox model
+  'ite18_Activity_3/lowpoly_fox.glb', // Replace with the path to your fox model
   (gltf) => {
     fox = gltf.scene;
     fox.scale.set(0.5, 0.5, 0.5);  // Adjust size if needed
