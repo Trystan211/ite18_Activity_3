@@ -129,12 +129,12 @@ const mouse = new THREE.Vector2();
 let intersectedObject = null;
 
 window.addEventListener('click', (event) => {
-  // Update mouse position
+  // Update mouse position in normalized device coordinates
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  // Update raycaster with mouse position
-  raycaster.update();
+  // Update the raycaster with the camera and mouse position
+  raycaster.setFromCamera(mouse, camera);
 
   // Check for intersections with the raycasting objects
   const intersects = raycaster.intersectObjects(raycastingObjects);
@@ -150,6 +150,11 @@ window.addEventListener('click', (event) => {
     intersectedObject = intersects[0].object;
     intersectedObject.material.color.set(0x00ff00); // New color
     intersectedObject.scale.set(1.5, 1.5, 1.5); // Increase size
+  } else if (intersectedObject) {
+    // If no object is intersected, reset the previously intersected object
+    intersectedObject.material.color.set(0xff0000);
+    intersectedObject.scale.set(1, 1, 1);
+    intersectedObject = null;
   }
 });
 
