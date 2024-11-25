@@ -54,13 +54,16 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
+// Define model URL at the top
+const modelUrl = 'https://trystan211.github.io/ite18_Activity_3/lowpoly_fox.glb';
+
 // Load the Fox Model
 const loader = new GLTFLoader();
 let foxMixer = null;  // Animation mixer for the fox
 let fox = null;  // Reference to the fox object
 
 loader.load(
-  './lowpoly_fox.glb', // Replace with the path to your fox model
+  modelUrl,  // Use modelUrl here
   (gltf) => {
     fox = gltf.scene;
     fox.scale.set(0.5, 0.5, 0.5);  // Adjust size if needed
