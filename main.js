@@ -66,7 +66,7 @@ loader.load(
   modelUrl,  // Use modelUrl here
   (gltf) => {
     fox = gltf.scene;
-    fox.scale.set(0.5, 0.5, 0.5);  // Adjust size if needed
+    fox.scale.set(0.1, 0.1, 0.1);  // Adjust size if needed
     fox.position.set(0, 0, 0);  // Initial position
     scene.add(fox);
 
