@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/loaders/GLTFLoader.js';
 
 // Scene Setup
 const scene = new THREE.Scene();
@@ -52,6 +53,32 @@ const ground = new THREE.Mesh(
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
+
+// Load the Fox Model
+const loader = new GLTFLoader();
+let foxMixer = null;  // Animation mixer for the fox
+let fox = null;  // Reference to the fox object
+
+loader.load(
+  'path/to/fox-model.glb', // Replace with the path to your fox model
+  (gltf) => {
+    fox = gltf.scene;
+    fox.scale.set(0.5, 0.5, 0.5);  // Adjust size if needed
+    fox.position.set(0, 0, 0);  // Initial position
+    scene.add(fox);
+
+    // Handle animations if available
+    if (gltf.animations && gltf.animations.length > 0) {
+      foxMixer = new THREE.AnimationMixer(fox);
+      const action = foxMixer.clipAction(gltf.animations[0]); // Assuming the first animation is walking
+      action.play();
+    }
+  },
+  undefined,
+  (error) => {
+    console.error('An error occurred while loading the fox model:', error);
+  }
+);
 
 // Fog
 scene.fog = new THREE.Fog(0x000022, 10, 50);
@@ -165,9 +192,15 @@ controls.dampingFactor = 0.25;
 
 // Animation
 const clock = new THREE.Clock();
+
 const animate = () => {
-  const elapsedTime = clock.getElapsedTime();
-  
+  const delta = clock.getDelta(); // Time elapsed since the last frame
+
+  // Update fox animation if the fox is loaded
+  if (foxMixer) {
+    foxMixer.update(delta); // Update fox animation
+  }
+
   animateSnow();  // Animate snowflakes falling
 
   // Rotate all raycasting objects
